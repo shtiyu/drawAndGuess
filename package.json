@@ -1,0 +1,23 @@
+{
+  "name": "draw_and_guess",
+  "version": "1.0.0",
+  "description": "你画我猜/Node.js/Express/MongoDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shtiyu/drawAndGuess.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shtiyu/drawAndGuess/issues"
+  },
+  "homepage": "https://github.com/shtiyu/drawAndGuess#readme",
+  "dependencies": {
+    "ejs": "^2.5.6",
+    "express": "^4.14.1"
+  }
+}
