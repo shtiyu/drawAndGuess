@@ -9,8 +9,7 @@ module.exports = function (app) {
     });
 
     app.use('/signup', require('./signup'));
-
-    // app.get('/singin', require('./signin'));
+    app.use('/singin', require('./signin'));
 
 
     app.use(function (err, req, res, next) {
@@ -20,6 +19,7 @@ module.exports = function (app) {
 
     app.use(function (req, res, next) {
         if(!res.headersSent){
+            debug.log('404-request url:' + req.url);
             res.render('404');
         }
     });
