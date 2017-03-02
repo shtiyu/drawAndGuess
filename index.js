@@ -4,6 +4,7 @@ let path    = require('path');
 let router  = require('./router');
 let pkg     = require('./package.json');
 
+
 global.DIR_ROOT = __dirname; //定义DIR_ROOT
 
 app.set('views', 'views');
