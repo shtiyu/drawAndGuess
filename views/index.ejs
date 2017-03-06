@@ -1,1 +1,60 @@
-进入游戏~
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<style type="text/css">
+
+</style>
+<body>
+<div class="main">
+    <div class="painting">
+        <div class="countingDown">
+
+        </div>
+        <div class="tools hide">
+            <span class="js-rubber"><div class="contain"><div><img src="image/rubber.png"></div></div></span>
+            <span class="js-size" data-size=1><div class="contain select"><div class="size1"></div></div></span>
+            <span class="js-size" data-size=4><div class="contain"><div class="size2"></div></div></span>
+            <span class="js-size" data-size=6><div class="contain"><div class="size3"></div></div></span>
+            <span class="js-color" data-color='#000000'><div class="contain select"><div class="color_black"></div></div></span>
+            <span class="js-color" data-color='#f44336'><div class="contain"><div class="color_red"></div></div></span>
+            <span class="js-color" data-color='#2196f3'><div class="contain"><div class="color_blue"></div></div></span>
+            <span class="js-color" data-color='#4caf50'><div class="contain"><div class="color_green"></div></div></span>
+            <span class="js-color" data-color='#ffeb3b'><div class="contain"><div class="color_yellow"></div></div></span>
+        </div>
+        <div class="drawArea">
+            <canvas id='previewLayer' class="not-allowed" height="500" width="900"></canvas>
+        </div>
+        <div class="leaderboard">
+            <h2>积分榜</h2>
+            <ul class="leaderboard-ul">
+
+            </ul>
+        </div>
+        <div class="questionArea">
+        </div>
+    </div>
+
+    <div class="chatArea">
+        <ul class="chatUl">
+
+        </ul>
+    </div>
+    <div class="inputArea">
+        <form>
+            <input type="text" name="chatInut" class="chatInput" autocomplete="off" />
+        </form>
+    </div>
+    <div class="playerArea">
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
