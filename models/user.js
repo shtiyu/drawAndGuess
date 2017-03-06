@@ -15,16 +15,16 @@ exports.login = function(nickname, password, callback){
 
         let salt   = result.salt;
         let dbpsw  = result.password;
-        let sumPsw = crypto.createHmac('sha256', salt).update(psw).digest('hex');
+        let sumPsw = crypto.createHmac('sha256', salt).update(password).digest('hex');
 
         if(dbpsw != sumPsw){
             return callback(false, '用户名或者密码错误。');
         }
 
-        return callback(true, 'OK', result);
+       return callback(true, 'OK', result);
 
     }).catch(function(e){
-        return callback(false, e.message);
+       return callback(false, e.message);
     });
 
 };

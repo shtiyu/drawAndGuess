@@ -29,7 +29,7 @@ router.post('/', util.checkNoLogin, function (req, res, next) {
 
     });
 
-    next();
+    // next();
 
 });
 
