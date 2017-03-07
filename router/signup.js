@@ -91,7 +91,7 @@ router.post('/',function (req, res, next) {
 
         userMod.createUser(attribute).then(function(result){
 
-            req.session.user = { id : result._id, nickname : result.name, avatar : result.avatar };
+            req.session.user = { id : result._id, name : result.name, avatar : result.avatar };
             return res.redirect('/');
 
         }).catch(function(err){

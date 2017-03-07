@@ -50,6 +50,11 @@ app.use(function (req, res, next) {
 router(app);
 ioSrv(io);
 
+app.use(function (err, req, res, next) {
+    debug.log(err.stack);
+    next();
+});
+
 server.listen(config.port, function () {
     console.log('app is running on port 3001');
 });

@@ -13,11 +13,6 @@ module.exports = function (app) {
     app.use('/signin', require('./signin'));
     app.use('/signout', require('./signout'));
 
-    app.use(function (err, req, res, next) {
-        debug.log(err.stack);
-        next();
-    });
-
     app.use(function (req, res, next) {
         if(!res.headersSent){
             debug.log('404-request url:' + req.url);
