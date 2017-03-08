@@ -13,10 +13,12 @@ let artist ;      //当前画家
 let artistIndex;  //当前画家位置
 let question;
 let countDown;    //倒计时
+let correct_player = []; //回答正确的用户
 
 //玩家加入游戏
 function userEnter(socket, io) {
 
+    socket.join("room");
     let userInfo  = socket.request.session.user;
 
     let userid   = userInfo._id;
@@ -25,8 +27,9 @@ function userEnter(socket, io) {
 
     //将用户的socket保存起来，用于私发消息
     usocket[userid] = socket;
-    userNum  = usocket.length;
-    let data = { nickname : nickname, userid : userid, avatar : avatar };
+    let userNum  = usocket.length;
+    let data    = { nickname : nickname, userid : userid, avatar : avatar };
+    let message = "";
 
     if(userNum < min_player){
         message = nickname + "加入游戏！再等一会，游戏马上开始！";
@@ -47,10 +50,10 @@ function userEnter(socket, io) {
         artistIndex = 0;
     }
 
-    io.sockets.emit('member enter', {message : message, nickname : nickname});
-    
+    io.sockets.in('room').emit('member enter', {message : message, nickname : nickname, artist : artist, players : players });
+
     if(players.length == min_player && question == undefined){
-        gameBegin();
+        gameBegin(io);
     }
 
     return true;
@@ -67,6 +70,7 @@ function userLeave(socket) {
         //TODO 如果是画手离开触发下一局游戏
         leaveRoom(userid);
         socket.broadcast.emit('member leave', {nickname : nickname, message : message});
+        socket.leave('room');
         return true;
     }
 }
@@ -106,12 +110,12 @@ function checkAnswer(message, sid){
 }
 
 //游戏开始
-function gameBegin(){
+function gameBegin(io){
     //取出一道题目
     question  = questionHouse.getQuestion();
-    countDown = 60;
+    countDown = 120;
     //给画家发送一个消息
-    let aSocket = usocket[artist.sid];
+    let aSocket = usocket[artist.userid];
     aSocket.emit('get question', {artist : artist, question : question, message : '你是这局的灵魂画手，请开始你的表演，题目是：'+question.answer});
 
     //给所有人发送游戏开始
@@ -120,19 +124,67 @@ function gameBegin(){
 
     //定时60秒后结束游戏
     time_out = setTimeout(function(){
-        // nextGame(false)
-    }, 60000);
+        nextGame(false, io)
+    }, 120000);
 
     count_down_id = setInterval(function(){
         countDown--;
 
-        io.sockets.emit('counting down', {countDown : countDown});
+        io.sockets.in('room').emit('counting down', {countDown : countDown});
 
         if(countDown <= 1){
             clearTimeout(count_down_id);
         }
 
     }, 1000);
+
+}
+
+/**
+ * 重新下一局游戏
+ * @param ifCorrect true为全部人答对，false为倒计时结束
+ * @param io
+ */
+function nextGame(ifCorrect, io){
+
+    let gameResMsg;
+    if(ifCorrect ==  false){
+
+        if(correct_player.length == 0){
+            gameResMsg = "本局游戏无人回答正确。答案："+question.answer;
+        }else{
+            // leaderBoard = util.addScore(leaderBoard, { sid : artist.sid, score : correct_player.length, nickname : artist.nickname});
+            gameResMsg  = '本局游戏'+correct_player.length+'玩家回答正确，画手加'+correct_player.length+'分。答案：'+question.answer;
+        }
+
+    }else{
+        gameResMsg = "本局游戏所有人回答正确，灵魂画手不加分。答案："+question.answer;
+        clearTimeout(time_out);
+        clearTimeout(count_down_id);
+    }
+
+    io.sockets.in('room').emit('system message', { message : gameResMsg });
+
+    //设置下一位灵魂画手
+    let findRs = findNextArtist();
+
+    //重置游戏人
+    io.sockets.in('room').emit('init stage', { artist : artist, players : players, leaderBoard : leaderBoard })
+
+    correct_player = [];
+
+    clearTimeout(time_out);
+    clearTimeout(count_down_id);
+
+    if(findRs == false){
+        question = undefined;
+        io.sockets.in('room').emit('system message', { message : "哎呦，人数不够了，快拉朋友来玩儿呀" });
+    }else{
+        io.sockets.in('room').emit('system message', { message : "3秒后，开始下一局，下一局由"+artist.nickname+"担任灵魂画手。"});
+        setTimeout(function(){
+            gameBegin();
+        }, 3000);
+    }
 
 }
 

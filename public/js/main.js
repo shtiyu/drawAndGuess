@@ -93,12 +93,7 @@ $(function() {
 			var html = '';
 			for(var i = 0; i < players.length; i++){
 				var _v = players[i];
-				var c  = 'userDiv';
-				if(artist && _v.sid == artist.sid){
-					c = 'userDiv light';
-				}
-
-				html += "<div class='"+c+"' title='"+_v.nickname+"' data-sid='"+_v.sid+"' style='background-color:"+_v.color+"'>"+_v.nickname.substring(0,1)+"</div>"
+				html += "<div class='userDiv' title='"+_v.nickname+"' data-sid='"+_v.userid+"'><img src='/uploads/"+_v.avatar+"' /></div>"
 			}
 
 			$('.playerArea').html(html);

@@ -134,7 +134,11 @@ input[type=text]:focus{
     width: 52px;
     height: 52px;
     margin-right:5px;
-    background-color: #fdd;
+    background-color: #fff;
+}
+
+.userDiv img{
+    width: 100%;
 }
 
 .light{
