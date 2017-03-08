@@ -111,6 +111,7 @@ function checkAnswer(message, sid){
 
 //游戏开始
 function gameBegin(io){
+    
     //取出一道题目
     question  = questionHouse.getQuestion();
     countDown = 120;
