@@ -10,6 +10,7 @@ let mongoStore = require('connect-mongo')(session);
 let bodyParser = require('body-parser');
 let server     = require('http').createServer(app);
 let io         = require('socket.io')(server);
+let debug      = require('./lib/debug');
 let ioSrv      = require('./router/socketSrv');
 
 global.DIR_ROOT = __dirname; //定义DIR_ROOT
@@ -49,11 +50,6 @@ app.use(function (req, res, next) {
 //路由
 router(app);
 ioSrv(io);
-
-app.use(function (err, req, res, next) {
-    debug.log(err.stack);
-    next();
-});
 
 server.listen(config.port, function () {
     console.log('app is running on port 3001');

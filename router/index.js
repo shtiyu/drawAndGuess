@@ -20,4 +20,9 @@ module.exports = function (app) {
         }
         next();
     });
+
+    app.use(function (err, req, res, next) {
+        debug.log(err.stack);
+        next();
+    });
 };

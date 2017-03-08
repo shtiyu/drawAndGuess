@@ -111,7 +111,7 @@ function checkAnswer(message, sid){
 
 //游戏开始
 function gameBegin(io){
-    
+
     //取出一道题目
     question  = questionHouse.getQuestion();
     countDown = 120;
@@ -202,8 +202,39 @@ module.exports = function (io) {
 
         let nickname  = userInfo.name;
         let userid    = userInfo._id;
+
         //进入房间
         userEnter(socket, io);
+
+        socket.on('clear ctx', function(){
+            //不响应非灵魂画手的操作
+            if(userid != artist.userid){
+                return false;
+            }
+            socket.broadcast.emit('clear ctx');
+        });
+
+        socket.on('mousedown', function(obj){
+            //不响应非灵魂画手的操作
+            if(userid != artist.userid){
+                return false;
+            }
+            socket.broadcast.emit('mousedown', obj);
+        });
+
+        socket.on('mouseup', function(){
+            if(userid != artist.userid){
+                return false;
+            }
+            socket.broadcast.emit('mouseup');
+        });
+
+        socket.on('mousemove', function(obj){
+            if(userid != artist.userid){
+                return false;
+            }
+            socket.broadcast.emit('mousemove', obj);
+        });
 
         //离开房间
         socket.on('disconnect', userLeave(socket));
