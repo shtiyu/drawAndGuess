@@ -27,7 +27,7 @@ let sessionMiddle = session({
     key    : config.session.key,
     secret : config.session.secrect,
     resave : config.session.resave,
-    cookie : { maxAge : 3600 * 1000},
+    cookie : { maxAge : 3600 * 1000 },
     store  : new mongoStore({ url : config.mongodb, ttl : 60 * 15, stringify : false }),
     saveUninitialized : config.session.saveUninitialized
 });
@@ -36,6 +36,7 @@ let sessionMiddle = session({
 io.use(function (socket, next) {
     sessionMiddle(socket.request, socket.request.res, next);
 });
+
 
 app.use(sessionMiddle);
 app.use(flash());

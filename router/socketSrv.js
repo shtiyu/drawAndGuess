@@ -18,6 +18,7 @@ let correct_player = []; //回答正确的用户
 //玩家加入游戏
 function userEnter(socket, io) {
 
+
     socket.join("room");
     let userInfo  = socket.request.session.user;
 
@@ -57,6 +58,7 @@ function userEnter(socket, io) {
     }
 
     return true;
+
 }
 
 //用户离开房间
@@ -193,60 +195,71 @@ module.exports = function (io) {
 
     io.on('connection', function(socket){
 
-        let userInfo  = socket.request.session.user;
+        try{
 
-        if(!userInfo){
-            socket.disconnect();
-            return false;
+            let userInfo  = socket.request.session.user;
+
+            if(!userInfo){
+                socket.disconnect();
+                return false;
+            }
+
+            let nickname  = userInfo.name;
+            let userid    = userInfo._id;
+
+            //进入房间
+            userEnter(socket, io);
+
+            socket.on('clear ctx', function(){
+                //不响应非灵魂画手的操作
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('clear ctx');
+            });
+
+            socket.on('mousedown', function(obj){
+                //不响应非灵魂画手的操作
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mousedown', obj);
+            });
+
+            socket.on('mouseup', function(){
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mouseup');
+            });
+
+            socket.on('mousemove', function(obj){
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mousemove', obj);
+            });
+
+            //离开房间
+            socket.on('disconnect', userLeave(socket));
+
+            //收到消息
+            socket.on('chat message', function (message) {
+                let rs = checkAnswer(message, userid);
+                if(rs == false){
+                    io.sockets.emit('chat message', {nickname : nickname, message : message});
+                }
+            });
+
+            socket.on('error', function(err){
+                debug.log("socket error:" + err.message);
+            });
+
+        }catch (e){
+            debug.log(e.message);
         }
 
-        let nickname  = userInfo.name;
-        let userid    = userInfo._id;
-
-        //进入房间
-        userEnter(socket, io);
-
-        socket.on('clear ctx', function(){
-            //不响应非灵魂画手的操作
-            if(userid != artist.userid){
-                return false;
-            }
-            socket.broadcast.emit('clear ctx');
-        });
-
-        socket.on('mousedown', function(obj){
-            //不响应非灵魂画手的操作
-            if(userid != artist.userid){
-                return false;
-            }
-            socket.broadcast.emit('mousedown', obj);
-        });
-
-        socket.on('mouseup', function(){
-            if(userid != artist.userid){
-                return false;
-            }
-            socket.broadcast.emit('mouseup');
-        });
-
-        socket.on('mousemove', function(obj){
-            if(userid != artist.userid){
-                return false;
-            }
-            socket.broadcast.emit('mousemove', obj);
-        });
-
-        //离开房间
-        socket.on('disconnect', userLeave(socket));
-
-        //收到消息
-        socket.on('chat message', function (message) {
-            let rs = checkAnswer(message, userid);
-            if(rs == false){
-                io.sockets.emit('chat message', {nickname : nickname, message : message});
-            }
-        });
-
     });
+
 
 };
