@@ -2,6 +2,73 @@
  * Created by shtiyu on 17/2/23.
  */
 
+
+module.exports = function (io) {
+
+    io.on('connection', function(socket){
+
+            let userInfo  = socket.request.session.user;
+
+            if(!userInfo){
+                socket.disconnect();
+                return false;
+            }
+
+            let nickname  = userInfo.name;
+            let userid    = userInfo._id;
+
+            //进入房间
+            userEnter(socket, io);
+
+            socket.on('clear ctx', function(){
+                //不响应非灵魂画手的操作
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('clear ctx');
+            });
+
+            socket.on('mousedown', function(obj){
+                //不响应非灵魂画手的操作
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mousedown', obj);
+            });
+
+            socket.on('mouseup', function(){
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mouseup');
+            });
+
+            socket.on('mousemove', function(obj){
+                if(userid != artist.userid){
+                    return false;
+                }
+                socket.broadcast.emit('mousemove', obj);
+            });
+
+            //离开房间
+            socket.on('disconnect', userLeave(socket, io));
+
+            //收到消息
+            socket.on('chat message', function (message) {
+                let rs = checkAnswer(io, message, userid, nickname);
+                if(rs == false){
+                    io.sockets.emit('chat message', {nickname : nickname, message : message});
+                }
+            });
+
+            socket.on('error', function(err){
+                debug.log("socket error:" + err.message);
+            });
+
+    });
+
+};
+
 let debug         = require('../lib/debug');
 let questionHouse = require('../models/questionHouse');
 let usocket     = []; //保存在线用户的socket
@@ -14,6 +81,37 @@ let artistIndex;  //当前画家位置
 let question;
 let countDown;    //倒计时
 let correct_player = []; //回答正确的用户
+
+function findNextArtist(){
+
+    if(players.length < min_player){
+        return false;
+    }
+
+    if(artist){
+        let oldSid = artist.userid;
+        let oldIndex;
+        //查找旧sid在数组中的位置，然后拿出下一个人
+        for(let i = 0; i < players.length; i++){
+            if(players[i].userid == oldSid){
+                oldIndex = i;
+                break;
+            }
+        }
+
+        if(oldIndex != undefined){
+            ++artistIndex;
+        }
+    }
+
+    if(artistIndex >= players.length){
+        artistIndex = 0;
+    }
+
+    artist = players[artistIndex];
+
+    return true;
+}
 
 //玩家加入游戏
 function userEnter(socket, io) {
@@ -62,7 +160,7 @@ function userEnter(socket, io) {
 }
 
 //用户离开房间
-function userLeave(socket) {
+function userLeave(socket, io) {
     return function(){
 
         let userid    = socket.request.session.user._id;
@@ -70,9 +168,15 @@ function userLeave(socket) {
         let message   = nickname + "离开了房间。";
 
         //TODO 如果是画手离开触发下一局游戏
-        leaveRoom(userid);
+        let ret = leaveRoom(userid);
         socket.broadcast.emit('member leave', {nickname : nickname, message : message});
         socket.leave('room');
+
+        if(ret == 1 && question != undefined){
+            io.sockets.in('room').emit('system message', {message : "呃，灵魂画手掉线了。"})
+            nextGame(false, io);
+        }
+
         return true;
     }
 }
@@ -106,9 +210,44 @@ function leaveRoom(userid){
 
 
 //检查答案是否正确
-function checkAnswer(message, sid){
+function checkAnswer(io, message, userid, nickname){
 
-    return false;
+    if(!question){
+        return false;
+    }
+
+    let answer = question.answer;
+    if(answer != message){
+        return false;
+    }
+
+    let score = players.length - 1 - correct_player.length
+    if(score <= 1){
+        score = 1;
+    }
+
+    correct_player.push(userid);
+    io.sockets.emit('system message', { message : nickname + "回答正确！加"+score+"分" });
+
+    // leaderBoard  = util.addScore(leaderBoard, {sid : sid, nickname : nickname, score : score});
+
+    if(correct_player.length == (players.length - 2)){
+        if(countDown > 10){
+            io.sockets.emit('system message', { message : '时间调整为10秒。'});
+            clearTimeout(time_out);
+            time_out  = setTimeout(function(){
+                nextGame(false, io);
+            }, 10000);
+            countDown = 10;
+        }
+    }
+
+    if(correct_player.length >= (players.length - 1 )){
+        //全部答对
+        nextGame(true, io);
+    }
+
+    return true;
 }
 
 //游戏开始
@@ -116,7 +255,7 @@ function gameBegin(io){
 
     //取出一道题目
     question  = questionHouse.getQuestion();
-    countDown = 120;
+    countDown = 100;
     //给画家发送一个消息
     let aSocket = usocket[artist.userid];
     aSocket.emit('get question', {artist : artist, question : question, message : '你是这局的灵魂画手，请开始你的表演，题目是：'+question.answer});
@@ -128,7 +267,7 @@ function gameBegin(io){
     //定时60秒后结束游戏
     time_out = setTimeout(function(){
         nextGame(false, io)
-    }, 120000);
+    }, 100000);
 
     count_down_id = setInterval(function(){
         countDown--;
@@ -172,7 +311,7 @@ function nextGame(ifCorrect, io){
     let findRs = findNextArtist();
 
     //重置游戏人
-    io.sockets.in('room').emit('init stage', { artist : artist, players : players, leaderBoard : leaderBoard })
+    io.sockets.in('room').emit('init stage', { artist : artist, players : players});
 
     correct_player = [];
 
@@ -183,83 +322,10 @@ function nextGame(ifCorrect, io){
         question = undefined;
         io.sockets.in('room').emit('system message', { message : "哎呦，人数不够了，快拉朋友来玩儿呀" });
     }else{
-        io.sockets.in('room').emit('system message', { message : "3秒后，开始下一局，下一局由"+artist.nickname+"担任灵魂画手。"});
+        io.sockets.in('room').emit('system message', { message : "10秒后，开始下一局，下一局由"+artist.nickname+"担任灵魂画手。"});
         setTimeout(function(){
-            gameBegin();
-        }, 3000);
+            gameBegin(io);
+        }, 10000);
     }
 
 }
-
-module.exports = function (io) {
-
-    io.on('connection', function(socket){
-
-        try{
-
-            let userInfo  = socket.request.session.user;
-
-            if(!userInfo){
-                socket.disconnect();
-                return false;
-            }
-
-            let nickname  = userInfo.name;
-            let userid    = userInfo._id;
-
-            //进入房间
-            userEnter(socket, io);
-
-            socket.on('clear ctx', function(){
-                //不响应非灵魂画手的操作
-                if(userid != artist.userid){
-                    return false;
-                }
-                socket.broadcast.emit('clear ctx');
-            });
-
-            socket.on('mousedown', function(obj){
-                //不响应非灵魂画手的操作
-                if(userid != artist.userid){
-                    return false;
-                }
-                socket.broadcast.emit('mousedown', obj);
-            });
-
-            socket.on('mouseup', function(){
-                if(userid != artist.userid){
-                    return false;
-                }
-                socket.broadcast.emit('mouseup');
-            });
-
-            socket.on('mousemove', function(obj){
-                if(userid != artist.userid){
-                    return false;
-                }
-                socket.broadcast.emit('mousemove', obj);
-            });
-
-            //离开房间
-            socket.on('disconnect', userLeave(socket));
-
-            //收到消息
-            socket.on('chat message', function (message) {
-                let rs = checkAnswer(message, userid);
-                if(rs == false){
-                    io.sockets.emit('chat message', {nickname : nickname, message : message});
-                }
-            });
-
-            socket.on('error', function(err){
-                debug.log("socket error:" + err.message);
-            });
-
-        }catch (e){
-            debug.log(e.message);
-        }
-
-    });
-
-
-};

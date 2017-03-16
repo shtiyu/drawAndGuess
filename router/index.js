@@ -25,4 +25,10 @@ module.exports = function (app) {
         debug.log(err.stack);
         next();
     });
+
+    //没有获取到的错误，全到这里，主要是为了防止socket.io抛出的错误crash服务器
+    process.on('uncaughtException', (err) => {
+        debug.log(err.stack);
+    });
+
 };
