@@ -3,9 +3,7 @@
 * 注册
 * 登录
 * 聊天
-* 绘画实时同步示
-未实现:<br>
-* 积分榜
+* 绘画实时同步
 
 ## 安装
 * git clone https://github.com/shtiyu/drawAndGuess.git
